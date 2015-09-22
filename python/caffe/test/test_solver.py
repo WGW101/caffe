@@ -2,17 +2,15 @@ import unittest
 import tempfile
 import os
 import numpy as np
-import six
 
 import caffe
 from test_net import simple_net_file
-
 
 class TestSolver(unittest.TestCase):
     def setUp(self):
         self.num_output = 13
         net_f = simple_net_file(self.num_output)
-        f = tempfile.NamedTemporaryFile(mode='w+', delete=False)
+        f = tempfile.NamedTemporaryFile(delete=False)
         f.write("""net: '""" + net_f + """'
         test_iter: 10 test_interval: 10 base_lr: 0.01 momentum: 0.9
         weight_decay: 0.0005 lr_policy: 'inv' gamma: 0.0001 power: 0.75
@@ -46,8 +44,8 @@ class TestSolver(unittest.TestCase):
 
         total = 0
         for net in nets:
-            for ps in six.itervalues(net.params):
+            for ps in net.params.itervalues():
                 for p in ps:
                     total += p.data.sum() + p.diff.sum()
-            for bl in six.itervalues(net.blobs):
+            for bl in net.blobs.itervalues():
                 total += bl.data.sum() + bl.diff.sum()

@@ -14,21 +14,26 @@ template <typename Dtype>
 class PythonLayer : public Layer<Dtype> {
  public:
   PythonLayer(PyObject* self, const LayerParameter& param)
-      : Layer<Dtype>(param), self_(bp::handle<>(bp::borrowed(self))) { }
+      : Layer<Dtype>(param), self_(self) { }
 
   virtual void LayerSetUp(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
-    self_.attr("param_str") = bp::str(
-        this->layer_param_.python_param().param_str());
-    self_.attr("setup")(bottom, top);
-  }
-  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
-      const vector<Blob<Dtype>*>& top) {
-    self_.attr("reshape")(bottom, top);
+    try {
+      bp::call_method<bp::object>(self_, "setup", bottom, top);
+    } catch (bp::error_already_set) {
+      PyErr_Print();
+      throw;
+    }
   }
 
-  virtual inline bool ShareInParallel() const {
-    return this->layer_param_.python_param().share_in_parallel();
+  virtual void Reshape(const vector<Blob<Dtype>*>& bottom,
+      const vector<Blob<Dtype>*>& top) {
+    try {
+      bp::call_method<bp::object>(self_, "reshape", bottom, top);
+    } catch (bp::error_already_set) {
+      PyErr_Print();
+      throw;
+    }
   }
 
   virtual inline const char* type() const { return "Python"; }
@@ -36,15 +41,26 @@ class PythonLayer : public Layer<Dtype> {
  protected:
   virtual void Forward_cpu(const vector<Blob<Dtype>*>& bottom,
       const vector<Blob<Dtype>*>& top) {
-    self_.attr("forward")(bottom, top);
+    try {
+      bp::call_method<bp::object>(self_, "forward", bottom, top);
+    } catch (bp::error_already_set) {
+      PyErr_Print();
+      throw;
+    }
   }
   virtual void Backward_cpu(const vector<Blob<Dtype>*>& top,
       const vector<bool>& propagate_down, const vector<Blob<Dtype>*>& bottom) {
-    self_.attr("backward")(top, propagate_down, bottom);
+    try {
+      bp::call_method<bp::object>(self_, "backward", top, propagate_down,
+          bottom);
+    } catch (bp::error_already_set) {
+      PyErr_Print();
+      throw;
+    }
   }
 
  private:
-  bp::object self_;
+  PyObject* self_;
 };
 
 }  // namespace caffe
