@@ -483,6 +483,8 @@ message DataParameter {
 // Message that stores parameters used by DropoutLayer
 message DropoutParameter {
   optional float dropout_ratio = 1 [default = 0.5]; // dropout ratio
+  // define if the whole sample in the batch should be dropped at once.
+  optional bool drop_full_sample = 2 [default = false];
 }
 
 // Message that stores parameters used by DummyDataLayer.
